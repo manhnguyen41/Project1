@@ -10,17 +10,20 @@ public class Ex3 {
         Scanner scanner = new Scanner(System.in);
 
         int n = scanner.nextInt();
-        HashSet<Integer> arr = new HashSet<Integer>();
+        HashSet<Integer> arr = new HashSet<>();
+        StringBuilder output = new StringBuilder();
 
         for (int i = 0; i < n; i++) {
             int num = scanner.nextInt();
 
             if (arr.contains(num)) {
-                System.out.println(1);
+                output.append("1\n");
             } else {
-                System.out.println(0);
+                output.append("0\n");
+                arr.add(num);
             }
-            arr.add(num);
         }
+
+        System.out.print(output.toString());
     }
 }
