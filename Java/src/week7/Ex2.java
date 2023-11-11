@@ -5,31 +5,30 @@ package week7;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.HashMap;
 
 public class Ex2 {
-    public static String timeFormat(String time) {
-        if (Integer.parseInt(time.substring(6)) == 60) {
-            int second = Integer.parseInt(time.substring(0, 2)) * 3600
-                    + Integer.parseInt(time.substring(3, 5)) * 60 + 60;
-            if (second == 86400) {
-                second = 0;
-            }
-            return LocalTime.ofSecondOfDay(second).toString();
+    public static int timeFormat(String time) {
+        int hour = Integer.parseInt(time.substring(0, 2));
+        int minute = Integer.parseInt(time.substring(3, 5));
+        int second = Integer.parseInt(time.substring(6));
+
+        if (hour == 23 && minute == 59 && second == 60) {
+            return 0;
         }
-        return time;
+
+        return hour * 3600 + minute * 60 + second;
     }
     public static void main(String[] args) throws IOException {
         class Order {
             private final String customerId;
             private final int price;
             private final String shopId;
-            private final LocalTime timePoint;
+            private final int timePoint;
 
-            public Order(String customerId, String productId, int price, String shopId, LocalTime timePoint) {
+            public Order(String customerId, String productId, int price, String shopId, int timePoint) {
                 this.customerId = customerId;
                 this.price = price;
                 this.shopId = shopId;
@@ -48,22 +47,27 @@ public class Ex2 {
                 return shopId;
             }
 
-            public LocalTime getTimePoint() {
+            public int getTimePoint() {
                 return timePoint;
             }
         }
 
         class ListOfOrders {
             private ArrayList<Order> listOfOrders;
-            private final HashMap<String, ArrayList<Order>> shopOrderMap;
+            private final HashMap<String, ArrayList<Order>> shopOrderMap = new HashMap<>(100000);
+
+            private final HashMap<String, Integer> shopRevenueMap = new HashMap<>(100000); // Adjust the initial capacity
+
             private int totalNumberOrders;
             private int totalRevenue;
 
+            private int []numberOrderInTime;
+
             public ListOfOrders() {
-                this.shopOrderMap = new HashMap<>();
                 this.listOfOrders = new ArrayList<>();
                 this.totalNumberOrders = 0;
                 this.totalRevenue = 0;
+                this.numberOrderInTime = new int[86400];
             }
 
             public ArrayList<Order> getListOfOrders() {
@@ -90,6 +94,14 @@ public class Ex2 {
                 this.totalRevenue = totalRevenue;
             }
 
+            public int[] getNumberOrderInTime() {
+                return numberOrderInTime;
+            }
+
+            public void setNumberOrderInTime(int[] numberOrderInTime) {
+                this.numberOrderInTime = numberOrderInTime;
+            }
+
             public void addOrder(Order order) {
                 listOfOrders.add(order);
                 ArrayList<Order> shopOrders = shopOrderMap.getOrDefault(order.getShopId(), new ArrayList<>());
@@ -97,18 +109,12 @@ public class Ex2 {
                 shopOrderMap.put(order.getShopId(), shopOrders);
                 totalRevenue += order.getPrice();
                 totalNumberOrders++;
+                numberOrderInTime[order.getTimePoint()] += order.getPrice();
+                shopRevenueMap.merge(order.getShopId(), order.getPrice(), Integer::sum);
             }
 
             public int revenueOfShop(String shopId) {
-                ArrayList<Order> shopOrders = shopOrderMap.get(shopId);
-                if (shopOrders == null) {
-                    return 0;
-                }
-                int total = 0;
-                for (Order order: shopOrders) {
-                    total += order.getPrice();
-                }
-                return total;
+                return shopRevenueMap.getOrDefault(shopId, 0);
             }
 
             public int totalConsumeOfCustomerShop(String customerId, String shopId) {
@@ -127,11 +133,11 @@ public class Ex2 {
 
             public int totalRevenueInPeriod(String fromTime, String toTime) {
                 int total = 0;
-                for (Order order: listOfOrders) {
-                    if (order.getTimePoint().isAfter(LocalTime.parse(fromTime))
-                    && order.getTimePoint().isBefore(LocalTime.parse(toTime))) {
-                        total += order.getPrice();
-                    }
+                int fromTimePoint = timeFormat(fromTime);
+                int toTimePoint = timeFormat(toTime);
+                int []list = numberOrderInTime;
+                for (int i = fromTimePoint; i <= toTimePoint; i++) {
+                    total += list[i];
                 }
                 return total;
             }
@@ -152,7 +158,7 @@ public class Ex2 {
             String shopId = st.nextToken();
             String time = st.nextToken();
 
-            listOfOrders.addOrder(new Order(customerId, productId, price, shopId, LocalTime.parse(timeFormat(time))));
+            listOfOrders.addOrder(new Order(customerId, productId, price, shopId, timeFormat(time)));
         }
 
         while (true) {
@@ -188,7 +194,7 @@ public class Ex2 {
             if (command.equals("?total_revenue_in_period")) {
                 String fromTime = st.nextToken();
                 String toTime = st.nextToken();
-                output.append(listOfOrders.totalRevenueInPeriod(timeFormat(fromTime), timeFormat(toTime)));
+                output.append(listOfOrders.totalRevenueInPeriod(fromTime, toTime));
                 output.append("\n");
             }
         }

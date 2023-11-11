@@ -5,10 +5,7 @@ package week7;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Ex1 {
     public static void main(String[] args) throws IOException {
@@ -37,23 +34,24 @@ public class Ex1 {
         }
 
         class ListOfAccount {
-            private final ArrayList<String> accounts;
+            private final HashSet<String> accounts;
 
             public ListOfAccount() {
-                this.accounts = new ArrayList<>();
+                this.accounts = new HashSet<>();
             }
 
-            public ArrayList<String> getAccounts() {
+            public HashSet<String> getAccounts() {
                 return accounts;
             }
 
-            public void addAccount(String account) {
-                accounts.add(account);
+            public boolean addAccount(String account) {
+                return accounts.add(account);
             }
 
             public void listSortedAccounts() {
-                accounts.sort(String::compareTo);
-                for (String account: accounts) {
+                ArrayList<String> sortedAccounts = new ArrayList<>(accounts);
+                Collections.sort(sortedAccounts);
+                for (String account : sortedAccounts) {
                     System.out.print(account + " ");
                 }
                 System.out.println();

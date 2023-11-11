@@ -3,58 +3,26 @@
 #include <string.h>
 #include <time.h>
 
-// Define a custom Time struct
-struct Time {
-    int hour;
-    int minute;
-    int second;
-};
+int numSubmissionInPeriod[24 * 3600];
+int totalSubmissionInPeriod[24 * 3600];
 
-// Function to convert a string "HH:MM:SS" to a Time struct
-struct Time stringToTime(char* timeStr) {
-    struct Time result;
-    if (sscanf(timeStr, "%d:%d:%d", &result.hour, &result.minute, &result.second) == 3) {
-        if (result.second == 60) {
-            result.second = 0;
-            result.minute++;
-            if (result.minute == 60) {
-                result.minute = 0;
-                result.hour++;
-                if (result.hour == 24) {
-                    result.hour = 0;
-                }
-            }
-        }
-    } else {
-        // Handle invalid input
-        printf("Invalid time format: %s\n", timeStr);
-        result.hour = result.minute = result.second = 0; // Default values
-    }
-    return result;
-}
-
-// Function to compare two Time structs
-int compareTimes(struct Time time1, struct Time time2) {
-    if (time1.hour < time2.hour) return -1;
-    if (time1.hour > time2.hour) return 1;
-    if (time1.minute < time2.minute) return -1;
-    if (time1.minute > time2.minute) return 1;
-    if (time1.second < time2.second) return -1;
-    if (time1.second > time2.second) return 1;
-    return 0; // The times are equal
+int stringToTime(const char* timeStr) {
+    int hour, minute, second;
+    sscanf(timeStr, "%d:%d:%d", &hour, &minute, &second);
+    return hour * 3600 + minute * 60 + second;
 }
 
 // Define the structure for an Submission
 struct Submission {
     char userId[10];
     char problemId[10];
-    struct Time timePoint;
+    int timePoint;
     int status;
     int point;
 };
 
 // Function to create a new Submission
-struct Submission createSubmission(char* userId, char* problemId, struct Time timePoint, char *status, int point) {
+struct Submission createSubmission(char* userId, char* problemId,int timePoint, char *status, int point) {
     struct Submission newSubmission;
     strcpy(newSubmission.userId, userId);
     strcpy(newSubmission.problemId, problemId);
@@ -181,17 +149,9 @@ int totalPointOfUser(char* userId) {
     return totalPoint;
 }
 
-int numberSubmissionInPeriod(struct Time fromTime, struct Time toTime) {
+int numberSubmissionInPeriod(int fromTime, int toTime) {
     int number = 0;
-    for (int i = 0; i < 1000; i++) {
-        struct Node* current = head[i];
-        while (current != NULL) {
-            if (compareTimes(current->submission.timePoint, fromTime) >= 0 && compareTimes(current->submission.timePoint, toTime) <= 0) {
-                number++;
-            }
-            current = current->next;
-        }
-    }
+    number = totalSubmissionInPeriod[toTime] - totalSubmissionInPeriod[fromTime] + numSubmissionInPeriod[fromTime];
     return number;
 }
 
@@ -228,6 +188,11 @@ int main() {
     int totalNumberSubmissions = 0;
     int numberErrSubmission = 0;
 
+    for (int i = 0; i < 24 * 3600; i++) {
+        numSubmissionInPeriod[i] = 0;
+        totalSubmissionInPeriod[i] = 0;
+    }
+
     while (1) {
         char userId[10];
         if (scanf("%s", userId) == EOF) {
@@ -246,9 +211,9 @@ int main() {
             return 1;
         }
 
-        struct Time timePoint = stringToTime(timeStr);
+        int timePoint = stringToTime(timeStr);
         struct Submission newSubmission = createSubmission(userId, problemId, timePoint, err, point);
-
+        numSubmissionInPeriod[timePoint]++;
         head[hashString(userId)] = insert(head[hashString(userId)], createNode(newSubmission));
 
         if (strlen(err) == 2) {
@@ -257,6 +222,10 @@ int main() {
             numberErrSubmission++;
         }
         totalNumberSubmissions++;
+    }
+
+    for (int i = 1; i < 24 * 3600; i++) {
+        totalSubmissionInPeriod[i] += totalSubmissionInPeriod[i - 1] + numSubmissionInPeriod[i];
     }
 
     while (1) {
@@ -303,8 +272,8 @@ int main() {
                 printf("Invalid input format.\n");
                 return 1;
             }
-            struct Time fromTime = stringToTime(fromTimeStr);
-            struct Time toTime = stringToTime(toTimeStr);
+            int fromTime = stringToTime(fromTimeStr);
+            int toTime = stringToTime(toTimeStr);
             int numberInPeriod = numberSubmissionInPeriod(fromTime, toTime);
             printf("%d\n", numberInPeriod);
             continue;

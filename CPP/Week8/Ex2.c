@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int numBorn[1500000];
+int totalBorn[1500000];
+
 int stringToDate(const char* dateStr) {
     int year, month, day;
     sscanf(dateStr, "%d-%d-%d", &year, &month, &day);
@@ -68,22 +71,8 @@ struct Node* insert(struct Node* node, struct Node* newNode) {
     return newNode;
 }
 
-struct Node *headDOB[1500000];
-
-void initHashTableDOB() {
-    for (int i = 0; i < 1000; i++) {
-        headDOB[i] = NULL;
-    }
-}
-
 int numberPeopleBornAt(char *date) {
-    int count = 0;
-    struct Node* current = headDOB[stringToDate(date)];
-    while (current != NULL) {
-        count++;
-        current = current->next;
-    }
-    return count;
+    return numBorn[stringToDate(date)];
 }
 
 int mostAliveAncestor(char *code) {
@@ -117,16 +106,7 @@ int mostAliveAncestor(char *code) {
 }
 
 int numberPeopleBornBetween(char *date1, char *date2) {
-    int count = 0;
-    int date1Number = stringToDate(date1);
-    int date2Number = stringToDate(date2);
-    for (int i = date1Number; i <= date2Number; i++) {
-        struct Node* current = headDOB[i];
-        while (current != NULL) {
-            count++;
-            current = current->next;
-        }
-    }
+    int count = totalBorn[stringToDate(date2)] - totalBorn[stringToDate(date1)] + numBorn[stringToDate(date1)];
     return count;
 }
 
@@ -159,6 +139,11 @@ int main() {
     int numberPeople = 0;
     int maxUnrelatedPeople = 0;
 
+    for (int i = 0; i < 1500000; i++) {
+        numBorn[i] = 0;
+        totalBorn[i] = 0;
+    }
+
     while (1) {
         char code[10];
         if (scanf("%s", code) == EOF) {
@@ -187,9 +172,12 @@ int main() {
         }
 
         head[hashString(code)] = insert(head[hashString(code)], createNode(newCitizen));
-        headDOB[date] = insert(headDOB[date], createNode(newCitizen));
-
+        numBorn[date]++;
         numberPeople++;
+    }
+
+    for (int i = 1; i < 1500000; i++) {
+        totalBorn[i] += totalBorn[i - 1] + numBorn[i];
     }
 
     while (1) {
